@@ -47,6 +47,8 @@ jobs:
           done
           python -c "import json; d=json.load(open('/tmp/health.json')); assert d['status']=='ok' and d['asr']=='not-configured', d"
           curl --fail --silent http://localhost:3000/ | grep -q "Say it. Shape it. Send it."
+          curl --fail --silent http://localhost:3000/api/health | python -c "import json,sys; d=json.load(sys.stdin); assert d['status']=='ok', d"
+          curl --fail --silent -X POST http://localhost:3000/api/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' | python -c "import json,sys; d=json.load(sys.stdin); assert d['text']=='hello world.' and d['review_required'] is True, d"
           curl --fail --silent -X POST http://localhost:8000/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' | python -c "import json,sys; d=json.load(sys.stdin); assert d['text']=='hello world.' and d['review_required'] is True, d"
           code=$(curl --silent --output /tmp/asr.json --write-out '%{http_code}' -X POST http://localhost:8000/v1/transcriptions)
           test "$code" = "501"
