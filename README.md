@@ -10,7 +10,7 @@ Clean-room voice-dictation project scaffold. This project does not contain Wispr
 docker compose up --build
 ```
 
-Open the web UI at http://localhost:3000 and API health at http://localhost:8000/health. The current UI accepts manual text; microphone capture and ASR are not connected yet.
+Open the web UI at http://localhost:3000 and API health at http://localhost:8000/health. The UI currently accepts manual text; microphone capture and real speech recognition are not connected yet.
 
 ### Native development
 
@@ -29,14 +29,16 @@ Read `AGENTS.md` first. Claude Code instructions are in `CLAUDE.md`; Codex uses 
 
 ## Components
 
-- `apps/web`: Next.js frontend
+- `apps/web`: Next.js frontend, same-origin formatting API, Supabase magic-link UI and callback
 - `apps/api`: FastAPI formatting API
 - `supabase/migrations`: user-scoped PostgreSQL schema and RLS
-- `docs`: architecture, implementation plan, privacy/security, agent setup
-- `.github/workflows/ci.yml`: frontend and backend CI
+- `docs`: architecture, implementation plan, privacy/security and integration instructions
+- `.github/workflows/ci.yml`: frontend, backend and Docker Compose smoke tests
 
-## Honest status
+## Current integration status
 
-Implemented: dashboard, deterministic formatting endpoint, health endpoint, explicit 501 response while ASR is absent, initial Supabase schema, RLS, CI, agent instructions and local stack definitions.
+Implemented in code: dashboard, deterministic formatting, health endpoint, explicit 501 when ASR is absent, Supabase browser/server clients, email OTP/magic-link sign-in flow, callback exchange, initial schema, RLS policies, CI and agent instructions.
 
-Not implemented yet: microphone capture, real ASR adapter, native global shortcut/text insertion, authentication middleware, real Supabase client integration, cloud sync, billing and Notetaker. Do not treat the current scaffold as production-ready. Do not enter production credentials into local demos.
+Configured: separate Supabase project in Mumbai; frontend Vercel environment variables for Supabase URL and publishable key.
+
+Still requires dashboard/configuration or further implementation: add production and localhost callback URLs to Supabase Auth's allowed redirect URLs; verify email delivery; use authenticated database operations from application screens; add microphone capture, real ASR, native global shortcut/text insertion, cloud sync, billing and Notetaker. Authenticated CRUD API endpoints are not implemented yet. Do not treat this scaffold as production-ready.
