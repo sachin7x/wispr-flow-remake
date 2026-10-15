@@ -41,17 +41,33 @@ jobs:
       - name: Smoke-test API and frontend
         shell: bash
         run: |
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://localhost:8000/health >/tmp/health.json; then break; fi
-            sleep 2
-          done
+          set -euo pipefail
+          wait_for_url() {
+            local url="$1"
+            local output="$2"
+            for attempt in $(seq 1 45); do
+              if curl --fail --silent --show-error "$url" >"$output" 2>/dev/null; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Timed out waiting for $url" >&2
+            return 1
+          }
+          wait_for_url http://localhost:8000/health /tmp/health.json
           python -c "import json; d=json.load(open('/tmp/health.json')); assert d['status']=='ok' and d['asr']=='not-configured', d"
-          curl --fail --silent http://localhost:3000/ | grep -q "Say it. Shape it. Send it."
-          curl --fail --silent http://localhost:3000/api/health | python -c "import json,sys; d=json.load(sys.stdin); assert d['status']=='ok', d"
-          curl --fail --silent -X POST http://localhost:3000/api/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' | python -c "import json,sys; d=json.load(sys.stdin); assert d['text']=='hello world.' and d['review_required'] is True, d"
-          curl --fail --silent -X POST http://localhost:8000/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' | python -c "import json,sys; d=json.load(sys.stdin); assert d['text']=='hello world.' and d['review_required'] is True, d"
-          code=$(curl --silent --output /tmp/asr.json --write-out '%{http_code}' -X POST http://localhost:8000/v1/transcriptions)
+          wait_for_url http://localhost:3000/ /tmp/home.html
+          python -c "from pathlib import Path; h=Path('/tmp/home.html').read_text().lower(); assert 'dictation' in h and 'flow' in h, h[:1000]"
+          wait_for_url http://localhost:3000/api/health /tmp/web-health.json
+          python -c "import json; d=json.load(open('/tmp/web-health.json')); assert d['status']=='ok', d"
+          curl --fail --silent --show-error -X POST http://localhost:3000/api/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' > /tmp/web-format.json
+          python -c "import json; d=json.load(open('/tmp/web-format.json')); assert d['text']=='hello world.' and d['review_required'] is True, d"
+          curl --fail --silent --show-error -X POST http://localhost:8000/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' > /tmp/api-format.json
+          python -c "import json; d=json.load(open('/tmp/api-format.json')); assert d['text']=='hello world.' and d['review_required'] is True, d"
+          code=$(curl --silent --show-error --output /tmp/asr.json --write-out '%{http_code}' -X POST http://localhost:8000/v1/transcriptions)
           test "$code" = "501"
+          code=$(curl --silent --show-error --output /tmp/sessions.json --write-out '%{http_code}' http://localhost:3000/api/v1/sessions)
+          test "$code" = "401" -o "$code" = "503"
       - name: Print container logs on failure
         if: failure()
         run: docker compose logs

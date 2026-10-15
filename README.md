@@ -1,6 +1,6 @@
 # Flow Remake
 
-Clean-room voice-dictation project scaffold. This project does not contain Wispr Flow proprietary source.
+Clean-room voice-dictation project. This project does not contain Wispr Flow proprietary source.
 
 ## Quick start
 
@@ -29,7 +29,7 @@ Read `AGENTS.md` first. Claude Code instructions are in `CLAUDE.md`; Codex uses 
 
 ## Components
 
-- `apps/web`: Next.js frontend, same-origin formatting API, Supabase magic-link UI and callback
+- `apps/web`: Next.js frontend, same-origin formatting API, Supabase magic-link sign-in and authenticated session-history API
 - `apps/api`: FastAPI formatting API
 - `supabase/migrations`: user-scoped PostgreSQL schema and RLS
 - `docs`: architecture, implementation plan, privacy/security and integration instructions
@@ -37,8 +37,8 @@ Read `AGENTS.md` first. Claude Code instructions are in `CLAUDE.md`; Codex uses 
 
 ## Current integration status
 
-Implemented in code: dashboard, deterministic formatting, health endpoint, explicit 501 when ASR is absent, Supabase browser/server clients, email OTP/magic-link sign-in flow, callback exchange, initial schema, RLS policies, CI and agent instructions.
+Implemented in code: dashboard, deterministic formatting, health endpoints, explicit 501 when ASR is absent, Supabase browser/server clients, email OTP/magic-link flow, callback exchange, authenticated session-history GET/POST routes, initial schema, RLS policies, CI and agent instructions.
 
 Configured: separate Supabase project in Mumbai; frontend Vercel environment variables for Supabase URL and publishable key.
 
-Still requires dashboard/configuration or further implementation: add production and localhost callback URLs to Supabase Auth's allowed redirect URLs; verify email delivery; use authenticated database operations from application screens; add microphone capture, real ASR, native global shortcut/text insertion, cloud sync, billing and Notetaker. Authenticated CRUD API endpoints are not implemented yet. Do not treat this scaffold as production-ready.
+Still requires dashboard/configuration or further implementation: add production and localhost callback URLs to Supabase Auth's allowed redirect URLs; verify email delivery; add microphone capture, real ASR, native global shortcut/text insertion, cloud sync preferences, personalization CRUD, billing and Notetaker. Do not treat this as production-ready. Transcripts are saved only when a signed-in user explicitly chooses Save to private history.
