@@ -32,3 +32,27 @@ jobs:
       - run: npm install
       - run: npm run lint
       - run: npm run build
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start complete local stack
+        run: docker compose up --build -d
+      - name: Smoke-test API and frontend
+        shell: bash
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8000/health >/tmp/health.json; then break; fi
+            sleep 2
+          done
+          python -c "import json; d=json.load(open('/tmp/health.json')); assert d['status']=='ok' and d['asr']=='not-configured', d"
+          curl --fail --silent http://localhost:3000/ | grep -q "Say it. Shape it. Send it."
+          curl --fail --silent -X POST http://localhost:8000/v1/format -H 'Content-Type: application/json' -d '{"transcript":"hello world","style":"natural"}' | python -c "import json,sys; d=json.load(sys.stdin); assert d['text']=='hello world.' and d['review_required'] is True, d"
+          code=$(curl --silent --output /tmp/asr.json --write-out '%{http_code}' -X POST http://localhost:8000/v1/transcriptions)
+          test "$code" = "501"
+      - name: Print container logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
