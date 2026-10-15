@@ -10,7 +10,7 @@ Clean-room voice-dictation project. This project does not contain Wispr Flow pro
 docker compose up --build
 ```
 
-Open the web UI at http://localhost:3000 and API health at http://localhost:8000/health. The UI currently accepts manual text; microphone capture and real speech recognition are not connected yet.
+Open the web UI at http://localhost:3000 and API health at http://localhost:8000/health. The UI supports manual text and opt-in browser speech recognition where available. Browser speech services may process audio remotely; no server-side ASR provider is configured.
 
 ### Native development
 
@@ -41,4 +41,4 @@ Implemented in code: dashboard, deterministic formatting, health endpoints, expl
 
 Configured: separate Supabase project in Mumbai; frontend Vercel environment variables for Supabase URL and publishable key.
 
-Still requires dashboard/configuration or further implementation: add production and localhost callback URLs to Supabase Auth's allowed redirect URLs; verify email delivery; add microphone capture, real ASR, native global shortcut/text insertion, cloud sync preferences, personalization CRUD, billing and Notetaker. Do not treat this as production-ready. Transcripts are saved only when a signed-in user explicitly chooses Save to private history.
+Still requires dashboard/configuration or further implementation: add production and localhost callback URLs to Supabase Auth's allowed redirect URLs; verify email delivery; add native microphone capture, a server-side ASR provider, native global shortcut/text insertion, cloud sync preferences, personalization CRUD, billing and Notetaker. Do not treat this as production-ready. Transcripts are saved only when a signed-in user explicitly chooses Save to private history.
