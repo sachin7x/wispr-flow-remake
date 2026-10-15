@@ -9,7 +9,7 @@ from app.pipeline import format_transcript
 
 app = FastAPI(
     title="Flow Remake API",
-    version="0.2.0",
+    version="0.2.1",
     description="Clean-room dictation API scaffold. ASR is not faked.",
 )
 origins = [
@@ -28,7 +28,7 @@ app.add_middleware(
 
 class FormatRequest(BaseModel):
     transcript: str = Field(min_length=1, max_length=30000)
-    style: Literal["natural", "email", "concise"] = "natural"
+    style: Literal["natural"] = "natural"
 
     @field_validator("transcript")
     @classmethod
