@@ -1,5 +1,20 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; [index: number]: { transcript: string } }> }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+type SpeechWindow = Window & {
+  SpeechRecognition?: new () => SpeechRecognitionLike;
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+};
 import AuthPanel from "@/components/auth-panel";
 
 type Session = {
@@ -14,7 +29,62 @@ export default function Home() {
   const [status, setStatus] = useState("Ready");
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Session[]>([]);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const words = useMemo(() => transcript.trim() ? transcript.trim().split(/\s+/).length : 0, [transcript]);
+
+  useEffect(() => () => {
+    recognitionRef.current?.stop();
+  }, []);
+
+  function toggleDictation() {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const speechWindow = window as SpeechWindow;
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setStatus("Browser speech recognition is unavailable. Try a supported browser or type your transcript.");
+      return;
+    }
+    try {
+      const recognition = new Recognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = navigator.language || "en-US";
+      recognition.onresult = (event) => {
+        const chunks: string[] = [];
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          if (result?.isFinal) chunks.push(result[0]?.transcript ?? "");
+        }
+        if (chunks.length) {
+          setTranscript((current) => [current.trim(), chunks.join(" ").trim()].filter(Boolean).join(" "));
+          setStatus("Speech captured in this tab · review before formatting");
+        }
+      };
+      recognition.onerror = (event) => {
+        setListening(false);
+        setStatus(event.error === "not-allowed"
+          ? "Microphone permission was denied. Allow access in browser settings."
+          : `Speech recognition error: ${event.error}`);
+      };
+      recognition.onend = () => {
+        setListening(false);
+        recognitionRef.current = null;
+      };
+      recognitionRef.current = recognition;
+      recognition.start();
+      setListening(true);
+      setStatus("Listening · browser speech recognition is active");
+    } catch {
+      recognitionRef.current = null;
+      setListening(false);
+      setStatus("Could not start speech recognition. Check microphone permission and try again.");
+    }
+  }
 
   async function checkApi() {
     setBusy(true);
@@ -92,7 +162,7 @@ export default function Home() {
     <section className="content"><header className="top"><div><span className="eyebrow">VOICE WORKSPACE</span><h1>Say it. Shape it. Send it.</h1><p>A focused workspace for the next generation of voice-first writing.</p></div><button className="secondary" onClick={checkApi} disabled={busy}>Check API ↗</button></header>
       <div className="status">● {status}<span>LOCAL PROTOTYPE</span></div>
       <AuthPanel />
-      <div className="grid" id="lab"><section className="panel editor"><div className="panelTitle"><div><span className="eyebrow">01 / TRANSCRIPT</span><h2>Dictation lab</h2></div><label className="pill">Manual input</label></div><p className="muted">Paste or type a transcript to test formatting. Microphone capture and speech recognition are not connected yet.</p><label className="fieldLabel" htmlFor="raw">Raw transcript</label><textarea id="raw" value={transcript} onChange={event => setTranscript(event.target.value)} placeholder="Example: hey team comma can we move the launch review to friday question mark thanks"/><div className="editorFoot"><small>{words} words · raw text retained in this tab</small><button className="primary" onClick={format} disabled={busy || !transcript.trim()}>{busy ? "Working…" : "Format transcript ↗"}</button></div>
+      <div className="grid" id="lab"><section className="panel editor"><div className="panelTitle"><div><span className="eyebrow">01 / TRANSCRIPT</span><h2>Dictation lab</h2></div><label className="pill">Manual input</label></div><p className="muted">Paste or type a transcript to test formatting. Microphone capture and speech recognition are not connected yet.</p><label className="fieldLabel" htmlFor="raw">Raw transcript</label><textarea id="raw" value={transcript} onChange={event => setTranscript(event.target.value)} placeholder="Example: hey team comma can we move the launch review to friday question mark thanks"/><p className="muted">Browser speech recognition availability varies. When enabled, your browser may process audio using its speech service. Recording starts only after you press the button.</p><div className="editorFoot"><small>{words} words · raw text retained in this tab</small><div className="editorFoot"><button className="secondary" onClick={toggleDictation} disabled={busy}>{listening ? "Stop listening ■" : "Start voice input ●"}</button><button className="primary" onClick={format} disabled={busy || !transcript.trim()}>{busy ? "Working…" : "Format transcript ↗"}</button></div></div>
       {formatted && <div className="result"><div className="panelTitle"><strong>Formatted preview</strong><span className="pill">Review required</span></div><p>{formatted}</p><div className="editorFoot"><button className="linkButton" onClick={() => navigator.clipboard.writeText(formatted)}>Copy preview</button><button className="secondary" onClick={saveSession} disabled={busy}>Save to private history</button></div></div>}
       <div className="result"><div className="panelTitle"><strong>Saved sessions</strong><button className="linkButton" onClick={loadHistory} disabled={busy}>Load history</button></div>{history.length ? history.map((item) => <div className="milestone" key={item.id}><span>↳</span><div><strong>{new Date(item.created_at).toLocaleString()}</strong><p>{item.formatted_transcript}</p></div></div>) : <p className="muted">Sign in to save and load your own session history.</p>}</div>
       </section>
