@@ -1,6 +1,7 @@
 import re
 
-_ALLOWED_STYLES = {"natural", "email", "concise"}
+_ALLOWED_STYLES = {"natural"}
+
 
 def format_transcript(transcript: str, style: str = "natural") -> dict[str, object]:
     # Conservative deterministic formatting; this is not an LLM rewrite.
