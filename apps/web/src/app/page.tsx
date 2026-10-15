@@ -6,7 +6,7 @@ export default function Home() {
   const [formatted, setFormatted] = useState("");
   const [status, setStatus] = useState("Ready");
   const [busy, setBusy] = useState(false);
-  const words = useMemo(() => transcript.trim() ? transcript.trim().split(/\\s+/).length : 0, [transcript]);
+  const words = useMemo(() => transcript.trim() ? transcript.trim().split(/\s+/).length : 0, [transcript]);
   async function checkApi() {
     setBusy(true);
     try { const r = await fetch(`${API}/health`); if (!r.ok) throw new Error(); const d = await r.json(); setStatus(`API connected · ${d.status}`); }
