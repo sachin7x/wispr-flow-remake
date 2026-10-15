@@ -1,20 +1,44 @@
 # Flow Remake
 
-Clean-room, functionally comparable voice-dictation platform scaffold. This project does not contain Wispr Flow proprietary source.
+Clean-room voice-dictation project. This project does not contain Wispr Flow proprietary source.
 
-## Monorepo
-- `apps/web`: Next.js frontend
-- `apps/api`: FastAPI backend
-- `supabase/migrations`: PostgreSQL schema and row-level security
-- `docs`: architecture, implementation plan and privacy baseline
-- `.github/workflows/ci.yml`: CI starter
+## Quick start
 
-## Status
-The dashboard and deterministic formatting prototype are implemented in this scaffold. Microphone capture, ASR provider integration, native system-wide insertion, authenticated private routes, subscriptions, sync, and Notetaker remain unimplemented. The API deliberately does not fake successful transcription.
+### One command (Docker)
 
-## Run
-API: `cd apps/api && python -m venv .venv && source .venv/bin/activate && pip install -e '.[dev]' && uvicorn app.main:app --reload --port 8000`
-Web: `cd apps/web && npm install && npm run dev`
-API tests: `cd apps/api && pytest`
+```sh
+docker compose up --build
+```
 
-Copy `.env.example` to `.env` for local development. Never commit secrets. Tests/builds have not been run as part of generating this scaffold.
+Open the web UI at http://localhost:3000 and API health at http://localhost:8000/health. The UI supports manual text and opt-in browser speech recognition where available. Browser speech services may process audio remotely; no server-side ASR provider is configured.
+
+### Native development
+
+Prerequisites: Python 3.11+, Node.js 20+, npm. Then:
+
+```sh
+make setup
+make verify
+```
+
+Start the API with `cd apps/api && .venv/bin/uvicorn app.main:app --reload --port 8000`; in a second terminal run `cd apps/web && npm run dev`.
+
+## Agent setup
+
+Read `AGENTS.md` first. Claude Code instructions are in `CLAUDE.md`; Codex uses `AGENTS.md` and `CODEX.md`. See `docs/AGENT_SETUP.md` for exact commands and credential safety.
+
+## Components
+
+- `apps/web`: Next.js frontend, same-origin formatting API, Supabase magic-link sign-in and authenticated session-history API
+- `apps/api`: FastAPI formatting API
+- `supabase/migrations`: user-scoped PostgreSQL schema and RLS
+- `docs`: architecture, implementation plan, privacy/security and integration instructions
+- `.github/workflows/ci.yml`: frontend, backend and Docker Compose smoke tests
+
+## Current integration status
+
+Implemented in code: dashboard, deterministic formatting, health endpoints, explicit 501 when ASR is absent, Supabase browser/server clients, email OTP/magic-link flow, callback exchange, authenticated session-history GET/POST routes, initial schema, RLS policies, CI and agent instructions.
+
+Configured: separate Supabase project in Mumbai; frontend Vercel environment variables for Supabase URL and publishable key.
+
+Still requires dashboard/configuration or further implementation: add production and localhost callback URLs to Supabase Auth's allowed redirect URLs; verify email delivery; add native microphone capture, a server-side ASR provider, native global shortcut/text insertion, cloud sync preferences, personalization CRUD, billing and Notetaker. Do not treat this as production-ready. Transcripts are saved only when a signed-in user explicitly chooses Save to private history.
