@@ -1,6 +1,5 @@
 "use client";
 import { useMemo, useState } from "react";
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 export default function Home() {
   const [transcript, setTranscript] = useState("");
   const [formatted, setFormatted] = useState("");
@@ -9,17 +8,17 @@ export default function Home() {
   const words = useMemo(() => transcript.trim() ? transcript.trim().split(/\s+/).length : 0, [transcript]);
   async function checkApi() {
     setBusy(true);
-    try { const r = await fetch(`${API}/health`); if (!r.ok) throw new Error(); const d = await r.json(); setStatus(`API connected · ${d.status}`); }
-    catch { setStatus("API unavailable · start FastAPI on port 8000"); }
+    try { const r = await fetch("/api/health"); if (!r.ok) throw new Error(); const d = await r.json(); setStatus(`API connected · ${d.status}`); }
+    catch { setStatus("API unavailable · check the deployment logs"); }
     finally { setBusy(false); }
   }
   async function format() {
     setBusy(true);
     try {
-      const r = await fetch(`${API}/v1/format`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({transcript,style:"natural"}) });
+      const r = await fetch("/api/v1/format", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({transcript,style:"natural"}) });
       const d = await r.json(); if (!r.ok) throw new Error(d.detail ?? "Formatting failed");
       setFormatted(d.text); setStatus("Formatted preview ready · review before use");
-    } catch { setStatus("Formatting failed · check API connection"); }
+    } catch { setStatus("Formatting failed · check the API connection"); }
     finally { setBusy(false); }
   }
   return <main className="shell">
