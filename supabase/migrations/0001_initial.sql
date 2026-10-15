@@ -31,3 +31,8 @@ create policy "users create own sessions" on public.dictation_sessions for inser
 create policy "users update own sessions" on public.dictation_sessions for update to authenticated using (auth.uid()=user_id) with check (auth.uid()=user_id);
 create policy "users delete own sessions" on public.dictation_sessions for delete to authenticated using (auth.uid()=user_id);
 create index if not exists dictation_sessions_user_created_idx on public.dictation_sessions(user_id, created_at desc);
+revoke all on public.user_preferences from anon, authenticated;
+revoke all on public.dictation_sessions from anon, authenticated;
+grant select, insert, update, delete on public.user_preferences to authenticated;
+grant select, insert, update, delete on public.dictation_sessions to authenticated;
+grant usage on schema public to authenticated;
